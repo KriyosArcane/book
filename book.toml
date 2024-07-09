@@ -12,3 +12,7 @@ git-repository-url = "https://github.com/pumpbin/book"
 edit-url-template = "https://github.com/pumpbin/book/edit/main/{path}"
 additional-css = ["theme/catppuccin.css"]
 cname = "pumpbin.b1n.io"
+
+[output.html.playground]
+copy-js = false
+runnable = false
