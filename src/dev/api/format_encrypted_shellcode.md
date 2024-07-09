@@ -1,8 +1,8 @@
 # format_encrypted_shellcode
 
-将加密后的shellcode转换成另一种格式, 比如隐写到png, 转换成UUID ...
+Convert the encrypted shellcode to another format, such as steganography to png, convert to UUID...
 
-## 函数名
+## Function Name
 
 format_encrypted_shellcode
 
@@ -14,7 +14,7 @@ format_encrypted_shellcode
 }
 ```
 
-`shellcode`为字节数组, 是加密后的shellcode.
+The `shellcode` is a byte array and is the encrypted shellcode.
 
 ## Output
 
@@ -24,4 +24,4 @@ format_encrypted_shellcode
 }
 ```
 
-`formated_shellcode`为字节数组, 是转换后的shellcode.
+`formated_shellcode` is a byte array, which is the converted shellcode.

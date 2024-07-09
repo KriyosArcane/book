@@ -1,8 +1,8 @@
 # format_url_remote
 
-将shellcode url转换成另一种格式. (`Remote` Only)
+Convert shellcode url to another format. (`Remote` Only)
 
-## 函数名
+## Function Name
 
 format_url_remote
 
@@ -14,7 +14,7 @@ format_url_remote
 }
 ```
 
-`url`为字符串, 是原始shellcode url.
+`url` is a string, which is the original shellcode url.
 
 ## Output
 
@@ -24,4 +24,4 @@ format_url_remote
 }
 ```
 
-`formated_url`为字符串, 是转换后的shellcode url.
+`formated_url` is a string, which is the converted shellcode url.

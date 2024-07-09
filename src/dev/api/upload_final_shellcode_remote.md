@@ -1,10 +1,11 @@
 # upload_final_shellcode_remote
 
-将final shellcode上传到远程服务器. (`Remote` Only)
+Upload the final shellcode to the remote server. (`Remote` Only)
 
-final shellcode是经过加密和转换后的shellcode, 如果某个Plug-in未设置, 则原样返回, 例如format_encrypted_shellcode Plug-in未设置, 则原样返回传入的加密后的shellcode.
+The final shellcode is the encrypted and converted shellcode. If a plug-in is not set, it is returned as is. For example, if the format_encrypted_shellcode plug-in is not set,
+the encrypted shellcode is returned as is.
 
-## 函数名
+## Function Name
 
 upload_final_shellcode_remote
 
@@ -16,7 +17,7 @@ upload_final_shellcode_remote
 }
 ```
 
-`final_shellcode`为字节数组, 是final shellcode.
+`final_shellcode` is a byte array, which is the final shellcode.
 
 ## Output
 
@@ -26,4 +27,4 @@ upload_final_shellcode_remote
 }
 ```
 
-`url`为字符串, 是上传后的url地址, PumpBin将自动填写到shellcode url输入框中.
+`url` is a string, which is the URL address after the upload, and PumpBin will automatically fill it into the shellcode URL input box.
