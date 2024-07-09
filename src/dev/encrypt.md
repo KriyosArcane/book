@@ -1,22 +1,22 @@
 # Encryption
 
-在这一章, 我们将优化上一章制作的Plugin, 使用AES256-GCM加密shellcode.
+In this chapter, we will optimize the plugin created in the previous chapter and use AES256-GCM to encrypt the shellcode.
 
-大部分黑客应该都想加密自己的shellcode, 没有人会愿意暴露基础设施.
+Most hackers would want to encrypt their shellcode, and no one would want to expose their infrastructure.
 
-## 制作二进制植入物模板
+## Create binary implant template
 
-要制作有加密功能的Plugin, 我们的二进制植入物模板需要先实现对应的解密逻辑.
+To create a plugin with encryption, our binary implant template needs to implement the corresponding decryption logic.
 
-我们将在[上一章代码](https://github.com/pumpbin/pumpbin/tree/main/examples/create_thread)的基础上更改.
+We will change it based on the code in the [previous chapter](https://github.com/pumpbin/pumpbin/tree/main/examples/create_thread).
 
-在Cargo.toml文件末尾添加下面的依赖
+Add the following dependencies to the end of the Cargo.toml file
 
 ```toml
 aes-gcm = "0.10.3"
 ```
 
-在main.rs中的main函数上面添加如下解密函数
+Add the following decryption function above the main function in main.rs
 
 ```rust
 fn decrypt(data: &[u8]) -> Vec<u8> {
@@ -29,16 +29,16 @@ fn decrypt(data: &[u8]) -> Vec<u8> {
 }
 ```
 
-其中两个被`$$`包裹的数组引用, 上一章已经出现过, 是两个`Place Holder`, PumpBin使用它来定位占位数据.
-(`Place Holder`是固定大小, `Prefix`是动态大小, 所以上一章中需要Size Holder来确定shellcode真实长度, 并且还需要Max Len字段)
+Two of them are array references wrapped in `$$`, which have already appeared in the previous chapter. They are two `Place Holder`, which are used by PumpBin to locate placeholder data.
+(`Place Holder` is a fixed size, `Prefix` is a dynamic size, so in the previous chapter, Size Holder is needed to determine the real length of the shellcode, and the Max Len field is also needed)
 
-在main.rs中main函数内第4行后添加如下代码
+Add the following code after the fourth line of the main function in main.rs
 
 ```rust
 let shellcode = decrypt(shellcode);
 ```
 
-添加完成后的main函数如下
+The main function after the addition is complete is as follows
 
 ```rust
 fn main() {
@@ -51,48 +51,50 @@ fn main() {
     ...
 ```
 
-编译修改后的`create_thread`项目, 我们将得到一个使用AES256-GCM解密shellcode的二进制植入物模板.
+Compiling the modified `create_thread` project, we will get a binary implant template that uses AES256-GCM to decrypt the shellcode.
 
 ```sh
 cargo b -r
 ```
 
-## 制作Plugin
+## Create Plugin
 
-我们使用PumpBin Maker制作Plugin, 步骤和上一章相同, 唯一不同的是我们还需要一个实现了对应解密逻辑的Extism Plug-in.
+We use PumpBin Maker to create the plugin. The steps are the same as in the previous chapter, except that we also need an Extism plug-in that implements the corresponding decryption logic.
 
-[plug-in](https://github.com/pumpbin/plug-in)仓库收集可重复使用的PumpBin Extism Plug-in, 其中包含[aes256-gcm](https://github.com/pumpbin/plug-in/tree/main/encrypt_shellcode/aes256-gcm) Extism Plug-in.
+The [plug-in](https://github.com/pumpbin/plug-in) repository collects reusable PumpBin Extism Plug-ins, including the [aes256-gcm](https://github.com/pumpbin/plug-in/tree/main/encrypt_shellcode/aes256-gcm) Extism Plug-in.
 
-README.md中说明了使用方法
+Instructions on how to use it are provided in README.md
 
 > key: `$$KKKKKKKKKKKKKKKKKKKKKKKKKKKK$$`\
 > nonce: `$$NNNNNNNN$$`
 
-我们需要在二进制植入物模板的解密函数中使用特定的key和nonce作为`Place Holder`, 我们前面已经这样做了.
-(如果你前面修改了解密函数中的KEY或者NONCE, 那么你需要从添加解密函数步骤重新开始)
+We need to use a specific key and nonce as a `Place Holder` in the decryption function of the binary implant template, which we have already done.
+(If you have previously modified the KEY or NONCE in the decryption function, you need to start again from the step of adding the decryption function)
 
-下载编译后的[aes256_gcm.wasm](https://github.com/pumpbin/plug-in/releases), 并将文件路径输入到到PumpBin Maker中的`Encrypt Shellcode Plug-in`输入框中. (也可以使用文件选择对话框选择下载的`aes256_gcm.wasm`文件)
+Download the compiled [aes256_gcm.wasm](https://github.com/pumpbin/plug-in/releases) and enter the file path into the `Encrypt Shellcode Plug-in` input box in PumpBin Maker.
+(You can also use the file selection dialog to select the downloaded `aes256_gcm.wasm` file)
 
-> Plugin Name填写first_plugin. (这个字段是Plugin的唯一标识, 这意味着用户无法同时安装两个同名的Plugin)
+> Plugin Name: Enter first_plugin. (This field is the unique identifier for the plugin, which means that users cannot install two plugins with the same name at the same time.)
 
-> Prefix填写`$$SHELLCODE$$`. (这是我们上面shellcode占位数据的`Prefix`, 你可以使用任何你喜欢的`Prefix`, 只要确保它是唯一的, 或者是第一个被匹配的)
+> Prefix: Enter `$$SHELLCODE$$`. (This is the `Prefix` of the shellcode placeholder data we used above. You can use any `Prefix` you like, as long as it is unique or the first one to be matched.)
 
-> Max Len填写shellcode占位数据的总大小, 在这个例子中应该是 1024\*1024 + Prefix的大小 = 1048589. (单位是Bytes)
+> Max Len: Fill in the total size of the shellcode placeholder data, which in this case should be 1024\*1024 + the size of the prefix = 1048589. (Unit: Bytes)
 
-> Type选择`Local`, Size Holder填写`$$99999$$`. (这是我们上面用来确定shellcode长度的常量字符串引用, 你可以使用任何你喜欢的Size Holder, 规则同上)
+> Type: Select `Local`, Size Holder: Fill in `$$99999$$`.
+> (This is the constant string reference we used above to determine the length of the shellcode. You can use any Size Holder you like. The rules are the same as above.)
 
-> Windows Exe选择我们上面编译好的二进制植入物模板. (也可以直接填写文件路径)
+> Windows Exe: Select the binary implant template we compiled above. (You can also directly enter the file path)
 
-> 点击Generate, 保存生成的b1n文件
+> Click Generate, save the generated b1n file
 
-## 测试Plugin
+## Test Plugin
 
-用PumpBin安装制作的Plugin, 并使用`w64-exec-calc-shellcode-func`生成一个最终植入物, 运行应该看到calc程序被启动.
+Install the plugin created with PumpBin and use `w64-exec-calc-shellcode-func` to generate a final implant. Running it should see the calc program launched.
 
-至此, 我们制作了一个使用AES256-GCM加密方法的`Local`类型Plugin
+At this point, we have created a plugin of type `Local` that uses the AES256-GCM encryption method
 
-前两章中, 我总是将`Local`引用起来, 以提醒这是一个关键词, 正确理解它们对于使用PumpBin非常重要.
+In the previous two chapters, I always quoted `Local` to remind you that it is a keyword. It is very important to understand them correctly when using PumpBin.
 
-下一章, 我们将制作第一个`Remote`类型的Plugin. 这允许将shellcode托管在远程服务器.
+In the next chapter, we will create our first plugin of type "Remote". This allows the shellcode to be hosted on a remote server.
 
-本例中的完整项目文件在PumpBin代码仓库的[examples/create_thread_encrypt](https://github.com/pumpbin/pumpbin/blob/main/examples/create_thread_encrypt/src/main.rs).
+The complete project file for this example is available in the PumpBin code repository at [examples/create_thread_encrypt](https://github.com/pumpbin/pumpbin/blob/main/examples/create_thread_encrypt/src/main.rs).

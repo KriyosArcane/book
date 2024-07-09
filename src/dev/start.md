@@ -79,7 +79,7 @@ With the length information of the shellcode, we can get the correct shellcode. 
 cargo b -r
 ```
 
-## Creating a Plugin
+## Create Plugin
 
 Now that we have a simple binary implant template, we can use PumpBin Maker to create a Plugin that only contains a Windows Exe
 
@@ -96,7 +96,7 @@ Windows Exe: Select the binary implant template we compiled above. (You can also
 
 Click Generate, save the generated b1n file
 
-## Test the plugin
+## Test Plugin
 
 Install the plugin created with PumpBin and use `w64-exec-calc-shellcode-func` to generate a final implant. You should see the `calc` program start.
 
